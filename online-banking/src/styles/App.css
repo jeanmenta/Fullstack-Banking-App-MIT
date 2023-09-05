@@ -1,0 +1,185 @@
+.bg-dark::placeholder {
+  /* Chrome, Firefox, Opera, Safari 10.1+ */
+  color: white !important;
+  opacity: 1;
+  /* Firefox */
+}
+
+.bg-dark:-ms-input-placeholder {
+  /* Internet Explorer 10-11 */
+  color: white !important;
+}
+
+.bg-dark::-ms-input-placeholder {
+  /* Microsoft Edge */
+  color: white !important;
+}
+
+button:focus, input:focus, select:focus {
+  outline: none;
+}
+
+
+
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type=number] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: #f4f4f4;
+}
+
+.card {
+  border: none;
+  border-radius: 15px;
+  box-shadow: 0px 10px 20px 0px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.card-title {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.card-img-top {
+  height: 200px;
+  object-fit: cover;
+}
+
+.success-message {
+  transition: opacity 1s ease-in-out;
+  opacity: 0;
+}
+
+.success-message.show {
+  opacity: 1;
+}
+
+
+.fade-in {
+  animation: fadeIn ease 1s;
+}
+
+.fade-out {
+  animation: fadeOut ease 1s;
+  animation-fill-mode: forwards;
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+
+.flex-grow-2 {
+  flex-grow: 2;
+}
+
+.flex-grow-10 {
+  flex-grow: 10;
+}
+
+
+.form-control {
+  border: none;
+  border-radius: 0;
+  border-bottom: 2px solid #007BFF;
+}
+
+.button {
+  background-color: #007BFF;
+  border: none;
+  color: #fff;
+  text-transform: uppercase;
+  padding: 10px 20px;
+  transition: background-color 0.3s;
+}
+
+.button:hover {
+  background-color: #0056b3;
+}
+
+.full-height {
+  height: calc(100vh - 56px);
+  background: transparent;
+  z-index: 999 !important;
+}
+
+
+.box-shadow {
+  box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+}
+
+.border-radius {
+  border-radius: 12px !important;
+}
+
+.borderless {
+  border: none !important;
+  outline: none !important;
+}
+
+.app-container {
+  overflow-y: hidden;
+}
+
+a {
+  text-decoration: none !important;
+}
+
+.logo {
+  left: 30px;
+  top: 20px;
+  position: absolute;
+  font-size: 30px;
+  color: lightgray
+}
+
+
+#particle-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: calc(100% - 56px);
+  background-color: transparent !important;
+}
+
+#particle-container canvas {
+  width: 100%;
+  height: calc(100% - 56px);
+
+}
+
+.custom-border {
+  border: 1px solid gray !important
+}
