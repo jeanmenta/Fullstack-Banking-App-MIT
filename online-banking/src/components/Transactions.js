@@ -1,11 +1,22 @@
 import { Table, Form } from 'react-bootstrap';
 import { useEffect, useState, useContext, useMemo } from 'react';
 import { AccountContext } from '../AccountContext';
+import axios from 'axios'; // Import Axios
 
 function Transactions() {
     const { user } = useContext(AccountContext);
 
-    const allTransactions = useMemo(() => JSON.parse(localStorage.getItem('transactions')) || [], []);
+    const [allTransactions, setAllTransactions] = useState([]);
+
+    useEffect(() => {
+        axios.get('http://localhost:3001/transactions')
+            .then(response => {
+                setAllTransactions(response.data);
+            })
+            .catch(error => {
+                console.error('Could not fetch transactions:', error);
+            });
+    }, []);
 
     const userTransactions = useMemo(() =>
         allTransactions

@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import './firebaseConfig';
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AccountContext } from './AccountContext';
 import Topbar from './components/Topbar';
@@ -39,24 +41,17 @@ function App() {
   };
 
   useEffect(() => {
-    const loggedInUser = localStorage.getItem('user');
-    const allAccounts = localStorage.getItem('accounts');
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUser(user);
+      } else {
+        setUser(null);
+      }
+      setIsLoading(false);
+    });
 
-    if (loggedInUser) {
-      const foundUser = JSON.parse(loggedInUser);
-      setUser(foundUser);
-    } else {
-      setUser(null);
-    }
-
-    if (allAccounts) {
-      const foundAccounts = JSON.parse(allAccounts);
-      setAccounts(foundAccounts);
-    } else {
-      setAccounts([]);
-    }
-
-    setIsLoading(false);
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -82,7 +77,6 @@ function App() {
           <Route path="/accounts" element={user ? <Accounts /> : <Navigate replace to="/login" />} />
           <Route path="*" element={user ? <Navigate replace to="/home" /> : <Navigate replace to="/login" />} />
         </Routes>
-
       </Router>
     </AccountContext.Provider>
   );

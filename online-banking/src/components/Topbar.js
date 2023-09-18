@@ -2,12 +2,20 @@ import React, { useContext } from 'react';
 import { Nav, Navbar, Dropdown } from 'react-bootstrap';
 import { AccountContext } from '../AccountContext';
 import { Link, useLocation } from 'react-router-dom';
+import { getAuth, signOut } from "firebase/auth";
 
 const Topbar = React.memo(({ links }) => {
     const { user, setUser } = useContext(AccountContext);
     const location = useLocation();
+    const auth = getAuth();
 
     const handleLogout = () => {
+        signOut(auth).then(() => {
+            console.log("User signed out from Firebase");
+        }).catch((error) => {
+            console.error("Firebase sign out failed:", error);
+        });
+
         setUser(null);
         localStorage.removeItem('user');
     }

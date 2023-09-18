@@ -1,19 +1,19 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useState } from 'react';
 import { Form, Button } from 'react-bootstrap';
 import { AccountContext } from '../AccountContext';
-import { Link } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import CustomCard from './CustomCard';
-import { v4 as uuidv4 } from 'uuid';
+import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 
 function CreateAccount() {
-    const { setUser, setAccounts, accounts } = useContext(AccountContext);
+    const { setUser } = useContext(AccountContext);
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [emailError, setEmailError] = useState("");
     const navigate = useNavigate();
+    const auth = getAuth();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     const [touched, setTouched] = useState({
@@ -27,17 +27,6 @@ function CreateAccount() {
         setTouched({ ...touched, [field]: true });
     }
 
-    useEffect(() => {
-        const storedAccounts = JSON.parse(localStorage.getItem('accounts'));
-        if (storedAccounts) {
-            setAccounts(storedAccounts);
-        }
-    }, [setAccounts]);
-
-    const emailExistsInAccounts = (email) => {
-        return accounts.some(account => account.email === email);
-    };
-
     const validateForm = () => {
         return name.length > 0 &&
             email.length > 0 &&
@@ -47,25 +36,19 @@ function CreateAccount() {
             emailError === "";
     };
 
-    const handleCreateAccount = (event) => {
+    const handleCreateAccount = async (event) => {
         event.preventDefault();
 
-        if (emailExistsInAccounts(email)) {
-            setEmailError('This email is already taken');
-            return;
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            setUser(user);
+            navigate('/home');
+        } catch (error) {
+            console.error("Account creation failed:", error);
+            setEmailError("Account creation failed. Please try again.");
         }
-
-        setEmailError('');
-
-        const newUser = { id: uuidv4(), name, email, password, balance: 0, linkedAccounts: [] };
-        const updatedAccounts = [...accounts, newUser];
-
-        setAccounts(updatedAccounts);
-        setUser(newUser);
-        localStorage.setItem("accounts", JSON.stringify(updatedAccounts));
-        localStorage.setItem('user', JSON.stringify(newUser));
-
-        navigate('/home');
     };
 
     return (
@@ -100,11 +83,7 @@ function CreateAccount() {
                                     value={email}
                                     onChange={(e) => {
                                         setEmail(e.target.value);
-                                        if (emailExistsInAccounts(e.target.value)) {
-                                            setEmailError('This email is already taken');
-                                        } else {
-                                            setEmailError('');
-                                        }
+
                                     }}
                                     isInvalid={touched.email && (!emailRegex.test(email) || emailError)}
                                     onBlur={handleBlur('email')}
