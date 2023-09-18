@@ -44,7 +44,10 @@ module.exports = {
         return await collection.updateOne({ email: accountId }, { $inc: { balance: incAmount } });
     },
     createAccount: async (name, email, password) => {
-        const hashedPassword = await bcrypt.hash(password, 10);
+        let hashedPassword = null;
+        if (password) {
+            hashedPassword = await bcrypt.hash(password, 10);
+        }
         const collection = client.db("BankingDB").collection("Users");
         return await collection.insertOne({ name, email, password: hashedPassword, balance: 0 });
     },

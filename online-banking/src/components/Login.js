@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import CustomCard from './CustomCard';
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithPopup } from "firebase/auth";
+import { provider } from '../firebaseConfig';
 
 function Login() {
     const { setUser } = useContext(AccountContext);
@@ -23,6 +25,29 @@ function Login() {
             navigate('/home');
         } catch (error) {
             console.error("Login failed:", error);
+        }
+    };
+
+    const signInWithGoogle = async () => {
+        try {
+            const result = await signInWithPopup(auth, provider);
+            const user = result.user;
+
+            const name = user.displayName;
+            const email = user.email;
+
+            await fetch('http://localhost:3001/create-account', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name, email }),
+            });
+
+            setUser(user);
+            navigate('/home');
+        } catch (error) {
+            console.error("Google Sign-In Error", error);
         }
     };
     return (
@@ -65,6 +90,8 @@ function Login() {
                             >
                                 Log In
                             </Button>
+                            <Button onClick={signInWithGoogle}>Sign in with Google</Button> {/* New Button */}
+
                             <div className='mt-3 col-12 text-center color-lightgray'>Or</div>
                             <Link to="/create-account" className="mt-1 fs-5 btn btn-link w-100">Create Account</Link>
                         </Form>
