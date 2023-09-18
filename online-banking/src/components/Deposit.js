@@ -5,24 +5,33 @@ import { AccountContext } from '../AccountContext';
 import CustomCard from './CustomCard';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import axios from 'axios';
 
 function Deposit() {
     const [depositAmount, setDepositAmount] = useState('');
     const [error, setError] = useState('');
     const { user, setUser } = useContext(AccountContext);
-    const [depositHistory, setDepositHistory] = useState([]);
+    const [depositHistory, setDepositHistory] = useState([])
 
     useEffect(() => {
-        const storedUser = JSON.parse(localStorage.getItem('user'));
-        setUser(storedUser);
+        const fetchBalance = async () => {
+            const response = await axios.get(`http://localhost:3001/balance/${user.email}`);
+            const updatedBalance = response.data.balance;
+            setUser({ ...user, balance: updatedBalance });
+        };
 
-        const transactions = JSON.parse(localStorage.getItem('transactions')) || [];
-        const depositTransactions = transactions.filter(
-            transaction => transaction.type === 'Deposit' && transaction.accountId === storedUser.email
-        );
-        const sortedDepositTransactions = depositTransactions.sort((a, b) => new Date(b.effectiveDate) - new Date(a.effectiveDate));
-        setDepositHistory(sortedDepositTransactions);
-    }, [setUser]);
+        fetchBalance();
+    }, [depositHistory, setUser, user]);
+
+    useEffect(() => {
+        const fetchDeposits = async () => {
+            const response = await axios.get('http://localhost:3001/transactions');
+            const depositsOnly = response.data.filter(t => t.type === 'Deposit' && t.accountId === user.email);
+            setDepositHistory(depositsOnly);
+        };
+
+        fetchDeposits();
+    }, [user.email]);
 
     const handleDeposit = () => {
         if (depositAmount === '' || isNaN(depositAmount) || depositAmount <= 0) {
@@ -30,26 +39,11 @@ function Deposit() {
             return;
         }
 
-        const validDepositAmount = parseFloat(depositAmount);  // This removes any leading zeros
+        const validDepositAmount = parseFloat(depositAmount);
         const updatedBalance = user.balance + validDepositAmount;
 
+        // Update user context
         setUser({ ...user, balance: updatedBalance });
-
-        let storedAccounts = JSON.parse(localStorage.getItem('accounts')) || [];
-
-        const updatedAccounts = storedAccounts.map(account => {
-            if (account.email === user.email) {
-                account.balance = updatedBalance;
-            }
-            return account;
-        });
-
-        localStorage.setItem('accounts', JSON.stringify(updatedAccounts));
-
-        const updatedUser = { ...user, balance: updatedBalance };
-        localStorage.setItem('user', JSON.stringify(updatedUser));
-
-        const transactions = JSON.parse(localStorage.getItem('transactions')) || [];
 
         const transaction = {
             accountId: user.email,
@@ -59,20 +53,22 @@ function Deposit() {
             effectiveDate: new Date().toISOString(),
         };
 
-        transactions.push(transaction);
-
-        localStorage.setItem('transactions', JSON.stringify(transactions));
-
-        setDepositAmount('');
-        setDepositHistory([...depositHistory, transaction]);
-
-        toast.success("Successful Desposit");
-
+        // Send the transaction to your server
+        axios.post('http://localhost:3001/transactions', transaction)
+            .then(response => {
+                toast.success("Successful Deposit");
+                setDepositAmount('');
+                setDepositHistory([...depositHistory, transaction]);
+            })
+            .catch(error => {
+                console.error('Could not complete deposit:', error);
+            });
     };
+
+
 
     const handleDepositAmountChange = (event) => {
         let amount = event.target.value;
-
         amount = amount.replace(/^0+/, '');
         setDepositAmount(amount);
 
@@ -82,7 +78,6 @@ function Deposit() {
             setError('');
         }
     };
-
     return (
         <div className='full-height col-12 d-flex flex-column align-items-center pt-5 justify-content-start'>
             <ToastContainer theme="dark" position="bottom-left" autoClose={3000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />

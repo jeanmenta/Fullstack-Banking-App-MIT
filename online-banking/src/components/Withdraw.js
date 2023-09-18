@@ -5,6 +5,7 @@ import { AccountContext } from '../AccountContext';
 import CustomCard from './CustomCard';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import axios from 'axios';
 
 function Withdraw() {
     const [withdrawAmount, setWithdrawAmount] = useState('');
@@ -13,16 +14,25 @@ function Withdraw() {
     const [withdrawHistory, setWithdrawHistory] = useState([]);
 
     useEffect(() => {
-        const storedUser = JSON.parse(localStorage.getItem('user'));
-        setUser(storedUser);
+        const fetchBalance = async () => {
+            const response = await axios.get(`http://localhost:3001/balance/${user.email}`);
+            const updatedBalance = response.data.balance;
+            setUser({ ...user, balance: updatedBalance });
+        };
 
-        const transactions = JSON.parse(localStorage.getItem('transactions')) || [];
-        const withdrawTransactions = transactions.filter(
-            (transaction) => transaction.type === 'Withdraw' && transaction.accountId === storedUser.email
-        );
-        const sortedWithdrawTransactions = withdrawTransactions.sort((a, b) => new Date(b.effectiveDate) - new Date(a.effectiveDate));
-        setWithdrawHistory(sortedWithdrawTransactions);
-    }, [setUser]);
+        fetchBalance();
+    }, [withdrawHistory, setUser, user]);
+
+    useEffect(() => {
+        const fetchWithdrawals = async () => {
+            const response = await axios.get('http://localhost:3001/transactions');
+            const withdrawalsOnly = response.data.filter(t => t.type === 'Withdraw' && t.accountId === user.email);
+            setWithdrawHistory(withdrawalsOnly);
+        };
+
+        fetchWithdrawals();
+    }, [user.email]);
+
 
     const handleWithdraw = () => {
         if (withdrawAmount === '' || withdrawAmount === '-' || withdrawAmount.toLowerCase() === 'e' || withdrawAmount.toLowerCase() === 'E' || isNaN(withdrawAmount) || withdrawAmount <= 0) {
@@ -41,21 +51,8 @@ function Withdraw() {
 
         setUser({ ...user, balance: updatedBalance });
 
-        let storedAccounts = JSON.parse(localStorage.getItem('accounts')) || [];
 
-        const updatedAccounts = storedAccounts.map((account) => {
-            if (account.email === user.email) {
-                account.balance = updatedBalance;
-            }
-            return account;
-        });
 
-        localStorage.setItem('accounts', JSON.stringify(updatedAccounts));
-
-        const updatedUser = { ...user, balance: updatedBalance };
-        localStorage.setItem('user', JSON.stringify(updatedUser));
-
-        const transactions = JSON.parse(localStorage.getItem('transactions')) || [];
 
         const transaction = {
             accountId: user.email,
@@ -65,15 +62,17 @@ function Withdraw() {
             effectiveDate: new Date().toISOString(),
         };
 
-        transactions.push(transaction);
-
-        localStorage.setItem('transactions', JSON.stringify(transactions));
-
-        setWithdrawAmount('');
-        setWithdrawHistory([...withdrawHistory, transaction]);
-
-        toast.success("Successful Withdrawal");
+        axios.post('http://localhost:3001/transactions', transaction)
+            .then(response => {
+                toast.success("Successful Withdrawal");
+                setWithdrawAmount('');
+                setWithdrawHistory([...withdrawHistory, transaction]);
+            })
+            .catch(error => {
+                console.error('Could not complete withdrawal:', error);
+            });
     };
+
 
     const handleWithdrawAmountChange = (event) => {
         let amount = event.target.value;
