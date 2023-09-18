@@ -40,8 +40,18 @@ function CreateAccount() {
         event.preventDefault();
 
         try {
+            // Create account in Firebase
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
+
+            // Create account in MongoDB
+            await fetch('http://localhost:3001/create-account', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name, email, password }),
+            });
 
             setUser(user);
             navigate('/home');
@@ -50,6 +60,7 @@ function CreateAccount() {
             setEmailError("Account creation failed. Please try again.");
         }
     };
+
 
     return (
         <div className='full-height col-12 d-flex flex-column align-items-center justify-content-center'>
