@@ -1,71 +1,61 @@
-import { useState, useContext, useEffect } from 'react';
+import { useState, useContext } from 'react';
+import { useMutation, gql } from '@apollo/client';
 import { Button, Form, Table } from 'react-bootstrap';
 import { v4 as uuidv4 } from 'uuid';
 import { AccountContext } from '../AccountContext';
 import CustomCard from './CustomCard';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import axios from 'axios';
+import { GET_BALANCE, GET_TRANSACTIONS } from '../AccountContext';
+
+const ADD_DEPOSIT_TRANSACTION = gql`
+  mutation AddTransaction($transaction: TransactionInput!) {
+    addTransaction(transaction: $transaction) {
+      id
+    }
+  }
+`;
 
 function Deposit() {
     const [depositAmount, setDepositAmount] = useState('');
     const [error, setError] = useState('');
-    const { user, setUser } = useContext(AccountContext);
-    const [depositHistory, setDepositHistory] = useState([])
+    const { user, balance, transactions, isLoading } = useContext(AccountContext);
 
-    useEffect(() => {
-        const fetchBalance = async () => {
-            const response = await axios.get(`http://localhost:3001/balance/${user.email}`);
-            const updatedBalance = response.data.balance;
-            setUser({ ...user, balance: updatedBalance });
-        };
+    const [addTransaction] = useMutation(ADD_DEPOSIT_TRANSACTION, {
+        refetchQueries: [
+            {
+                query: GET_BALANCE,
+                variables: { email: user?.email }
+            },
+            {
+                query: GET_TRANSACTIONS,
+                variables: { email: user?.email }
+            }
+        ]
+    });
 
-        fetchBalance();
-    }, [depositHistory, setUser, user]);
-
-    useEffect(() => {
-        const fetchDeposits = async () => {
-            const response = await axios.get('http://localhost:3001/transactions');
-            const depositsOnly = response.data.filter(t => t.type === 'Deposit' && t.accountId === user.email);
-            setDepositHistory(depositsOnly);
-        };
-
-        fetchDeposits();
-    }, [user.email]);
-
-    const handleDeposit = () => {
+    const handleDeposit = async () => {
         if (depositAmount === '' || isNaN(depositAmount) || depositAmount <= 0) {
             setError('Please enter a valid amount');
             return;
         }
 
-        const validDepositAmount = parseFloat(depositAmount);
-        const updatedBalance = user.balance + validDepositAmount;
-
-        // Update user context
-        setUser({ ...user, balance: updatedBalance });
-
         const transaction = {
             accountId: user.email,
             id: uuidv4(),
             type: 'Deposit',
-            amount: depositAmount,
+            amount: parseFloat(depositAmount),
             effectiveDate: new Date().toISOString(),
         };
 
-        // Send the transaction to your server
-        axios.post('http://localhost:3001/transactions', transaction)
-            .then(response => {
-                toast.success("Successful Deposit");
-                setDepositAmount('');
-                setDepositHistory([...depositHistory, transaction]);
-            })
-            .catch(error => {
-                console.error('Could not complete deposit:', error);
-            });
+        try {
+            await addTransaction({ variables: { transaction } });
+            toast.success("Successful Deposit");
+            setDepositAmount('');
+        } catch (error) {
+            console.error('Could not complete deposit:', error);
+        }
     };
-
-
 
     const handleDepositAmountChange = (event) => {
         let amount = event.target.value;
@@ -78,6 +68,7 @@ function Deposit() {
             setError('');
         }
     };
+
     return (
         <div className='full-height col-12 d-flex flex-column align-items-center pt-5 justify-content-start'>
             <ToastContainer theme="dark" position="bottom-left" autoClose={3000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
@@ -86,7 +77,9 @@ function Deposit() {
                     <CustomCard.Body className="gap-3">
                         <div className='d-flex flex-column'>
                             <div className='d-flex flex-row mb-3'>
-                                <div className="h5 mb-0">Balance ${user.balance}</div>
+                                <div className="h5 mb-0">
+                                    {isLoading ? 'Loading...' : `Balance $${balance}`}
+                                </div>
                             </div>
                             <Form className='d-flex flex-row gap-2 align-items-center'>
                                 <Form.Group className="">
@@ -105,7 +98,6 @@ function Deposit() {
                                 <Button className='border-radius' variant="primary" onClick={handleDeposit} disabled={depositAmount === '' || !!error}>
                                     Deposit
                                 </Button>
-
                             </Form>
                         </div>
                     </CustomCard.Body>
@@ -121,21 +113,28 @@ function Deposit() {
                         </tr>
                     </thead>
                     <tbody>
-                        {depositHistory.map(transaction => (
-                            <tr key={transaction.id}>
-                                <td>{transaction.id}</td>
-                                <td>Deposit</td>
-                                <td>${transaction.amount}</td>
-                                <td>{new Date(transaction.effectiveDate).toLocaleDateString()}</td>
-                                <td>{new Date(transaction.effectiveDate).toLocaleTimeString()}</td>
+                        {isLoading ? (
+                            <tr>
+                                <td colSpan="5">Loading...</td>
                             </tr>
-                        ))}
+                        ) : (
+                            transactions
+                                .filter(transaction => transaction.type === 'Deposit')
+                                .map(transaction => (
+                                    <tr key={transaction.id}>
+                                        <td>{transaction.id}</td>
+                                        <td>{transaction.type}</td>
+                                        <td>${transaction.amount}</td>
+                                        <td>{new Date(transaction.effectiveDate).toLocaleDateString()}</td>
+                                        <td>{new Date(transaction.effectiveDate).toLocaleTimeString()}</td>
+                                    </tr>
+                                ))
+                        )}
                     </tbody>
                 </Table>
             </div>
         </div>
     );
-
 }
 
 export default Deposit;

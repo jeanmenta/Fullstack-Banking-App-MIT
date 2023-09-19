@@ -1,32 +1,18 @@
 import { Table, Form } from 'react-bootstrap';
 import { useEffect, useState, useContext, useMemo } from 'react';
 import { AccountContext } from '../AccountContext';
-import axios from 'axios'; // Import Axios
 
 function Transactions() {
-    const { user } = useContext(AccountContext);
-
-    const [allTransactions, setAllTransactions] = useState([]);
+    const { transactions, fetchAccountData } = useContext(AccountContext);
 
     useEffect(() => {
-        axios.get('http://localhost:3001/transactions')
-            .then(response => {
-                setAllTransactions(response.data);
-            })
-            .catch(error => {
-                console.error('Could not fetch transactions:', error);
-            });
-    }, []);
-
-    const userTransactions = useMemo(() =>
-        allTransactions
-            .filter(transaction => transaction.accountId === user.email)
-            .sort((a, b) => new Date(b.effectiveDate) - new Date(a.effectiveDate)),
-        [allTransactions, user]);
+        fetchAccountData();
+    }, [fetchAccountData]);
 
     const [filterType, setFilterType] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
-    const [displayTransactions, setDisplayTransactions] = useState(userTransactions);
+
+    const userTransactions = useMemo(() => transactions, [transactions]);
 
     const handleTypeFilter = (e) => {
         setFilterType(e.target.value.toLowerCase());
@@ -36,7 +22,7 @@ function Transactions() {
         setSearchTerm(e.target.value.toLowerCase());
     };
 
-    useEffect(() => {
+    const displayTransactions = useMemo(() => {
         let filteredTransactions = userTransactions;
 
         if (filterType !== 'all') {
@@ -51,7 +37,7 @@ function Transactions() {
             );
         }
 
-        setDisplayTransactions(filteredTransactions);
+        return filteredTransactions;
     }, [filterType, searchTerm, userTransactions]);
 
     return (

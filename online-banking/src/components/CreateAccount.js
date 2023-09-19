@@ -4,6 +4,8 @@ import { AccountContext } from '../AccountContext';
 import { Link, useNavigate } from 'react-router-dom';
 import CustomCard from './CustomCard';
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
+import { signInWithPopup } from "firebase/auth";
+import { provider } from '../firebaseConfig';
 
 function CreateAccount() {
     const { setUser } = useContext(AccountContext);
@@ -40,8 +42,18 @@ function CreateAccount() {
         event.preventDefault();
 
         try {
+            // Create account in Firebase
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
+
+            // Create account in MongoDB
+            await fetch('http://localhost:3001/create-account', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name, email, password }),
+            });
 
             setUser(user);
             navigate('/home');
@@ -50,6 +62,30 @@ function CreateAccount() {
             setEmailError("Account creation failed. Please try again.");
         }
     };
+
+    const signInWithGoogle = async () => {
+        try {
+            const result = await signInWithPopup(auth, provider);
+            const user = result.user;
+
+            const name = user.displayName;
+            const email = user.email;
+
+            await fetch('http://localhost:3001/create-account', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name, email }),
+            });
+
+            setUser(user);
+            navigate('/home');
+        } catch (error) {
+            console.error("Google Sign-In Error", error);
+        }
+    };
+
 
     return (
         <div className='full-height col-12 d-flex flex-column align-items-center justify-content-center'>
@@ -126,6 +162,7 @@ function CreateAccount() {
                             <Button className="border-radius mt-3 w-100" type="submit" disabled={!validateForm()}>
                                 Create Account
                             </Button>
+                            <Button onClick={signInWithGoogle}>Sign in with Google</Button>
 
                             <div className='mt-3 col-12 text-center color-lightgray'>Or</div>
                             <Link to="/login" className="mt-1 fs-5 btn btn-link w-100">Log In</Link>
