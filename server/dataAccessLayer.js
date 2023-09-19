@@ -22,22 +22,6 @@ module.exports = {
         const user = await collection.findOne({ email });
         return user ? user.balance : 0;
     },
-    getUserDataByEmail: async (email) => {
-        const userCollection = client.db("BankingDB").collection("Users");
-        const user = await userCollection.findOne({ email });
-
-        const balanceCollection = client.db("BankingDB").collection("Balances");
-        const balance = await balanceCollection.findOne({ accountId: email });
-
-        const transactionCollection = client.db("BankingDB").collection("Transactions");
-        const transactions = await transactionCollection.find({ accountId: email }).toArray();
-
-        return {
-            email: user.email,
-            balance: balance ? balance.balance : 0,
-            transactions
-        };
-    },
     updateBalance: async (accountId, amount, type) => {
         const collection = client.db("BankingDB").collection("Users");
         const incAmount = type === 'Deposit' ? amount : -amount;
@@ -50,13 +34,5 @@ module.exports = {
         }
         const collection = client.db("BankingDB").collection("Users");
         return await collection.insertOne({ name, email, password: hashedPassword, balance: 0 });
-    },
-    login: async (email, password) => {
-        const collection = client.db("BankingDB").collection("Users");
-        const user = await collection.findOne({ email });
-        if (user && await bcrypt.compare(password, user.password)) {
-            return { status: 'success', email: user.email };
-        }
-        return { status: 'failure', message: 'Invalid credentials' };
     }
 };

@@ -7,6 +7,7 @@ import CustomCard from './CustomCard';
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { signInWithPopup } from "firebase/auth";
 import { provider } from '../firebaseConfig';
+import { signInWithRedirect } from "firebase/auth";
 
 function Login() {
     const { setUser } = useContext(AccountContext);
@@ -14,6 +15,15 @@ function Login() {
     const [password, setPassword] = useState("");
     const navigate = useNavigate();
     const auth = getAuth();
+    const [popupFailed, setPopupFailed] = useState(false);
+
+    const signInWithGoogleFallback = async () => {
+        try {
+            await signInWithRedirect(auth, provider);
+        } catch (error) {
+            console.error("Login failed:", error);
+        }
+    };
 
     const handleLogin = async (event) => {
         event.preventDefault();
@@ -30,26 +40,16 @@ function Login() {
 
     const signInWithGoogle = async () => {
         try {
-            const result = await signInWithPopup(auth, provider);
-            const user = result.user;
-
-            const name = user.displayName;
-            const email = user.email;
-
-            await fetch('http://localhost:3001/create-account', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ name, email }),
-            });
-
+            const userCredential = await signInWithPopup(auth, provider);
+            const user = userCredential.user;
             setUser(user);
             navigate('/home');
         } catch (error) {
-            console.error("Google Sign-In Error", error);
+            console.error("Login failed:", error);
+            setPopupFailed(true);
         }
     };
+
     return (
         <div className='full-height col-12 d-flex flex-column align-items-center justify-content-center'>
             <div className='logo'>Pro Bank</div>
@@ -66,9 +66,7 @@ function Login() {
                                     placeholder='Email'
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-
                                 />
-
                             </Form.Group>
                             <Form.Group className='mt-3' id="password">
                                 <Form.Control
@@ -90,7 +88,9 @@ function Login() {
                             >
                                 Log In
                             </Button>
-                            <Button onClick={signInWithGoogle}>Sign in with Google</Button> {/* New Button */}
+                            <Button onClick={popupFailed ? signInWithGoogleFallback : signInWithGoogle}>
+                                Sign in with Google
+                            </Button>
 
                             <div className='mt-3 col-12 text-center color-lightgray'>Or</div>
                             <Link to="/create-account" className="mt-1 fs-5 btn btn-link w-100">Create Account</Link>

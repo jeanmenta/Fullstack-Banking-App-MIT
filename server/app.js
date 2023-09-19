@@ -8,14 +8,15 @@ const {
     getTransactions,
     createTransaction,
     getBalanceByEmail,
-    getUserDataByEmail,
     updateBalance,
     createAccount,
-    login
 } = require('./dataAccessLayer');
 
 const app = express();
 const port = 3001;
+
+app.use(cors());
+app.use(bodyParser.json());
 
 const schema = buildSchema(`
   type Query {
@@ -24,7 +25,20 @@ const schema = buildSchema(`
   }
 
   type Mutation {
-    addTransaction(transaction: TransactionInput!): Transaction
+    addTransaction(transaction: TransactionInput!): Transaction!
+     createAccount(name: String!, email: String!, password: String!): AccountResponse!
+  login(email: String!, password: String!): LoginResponse!
+  }
+
+  type AccountResponse {
+    status: String!
+    message: String!
+  }
+  
+  type LoginResponse {
+    status: String!
+    email: String
+    message: String
   }
 
   type Transaction {
@@ -60,13 +74,18 @@ const root = {
     addWithdrawal: async ({ withdrawal }) => {
         await createTransaction(withdrawal);
         const amount = parseFloat(withdrawal.amount);
-        await updateBalance(withdrawal.accountId, -amount, 'Withdraw');  // Note the negative sign
+        await updateBalance(withdrawal.accountId, -amount, 'Withdraw');
         return withdrawal;
-    }
+    },
+    createAccount: async ({ name, email, password }) => {
+        const result = await createAccount(name, email, password);
+        if (result) {
+            return { status: "success", message: "Account created" };
+        } else {
+            return { status: "failure", message: "Couldn't create account" };
+        }
+    },
 };
-
-app.use(cors());
-app.use(bodyParser.json());
 
 app.use('/graphql', graphqlHTTP({
     schema: schema,
@@ -74,53 +93,15 @@ app.use('/graphql', graphqlHTTP({
     graphiql: true,
 }));
 
+app.use((req, res, next) => {
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+    next();
+});
+
 connect().then(() => {
     console.log("Connected to MongoDB");
 }).catch((err) => {
     console.error("Failed to connect to MongoDB", err);
-});
-
-app.get('/user/:email', async (req, res) => {
-    const userData = await getUserDataByEmail(req.params.email);
-    if (userData) {
-        res.json(userData);
-    } else {
-        res.status(404).json({ message: 'User not found' });
-    }
-});
-
-app.get('/transactions', async (req, res) => {
-    const transactions = await getTransactions();
-    res.json(transactions);
-});
-
-app.post('/transactions', async (req, res) => {
-    const newTransaction = req.body;
-    const result = await createTransaction(newTransaction);
-    const amount = parseFloat(newTransaction.amount);
-    await updateBalance(newTransaction.accountId, amount, newTransaction.type);
-    res.json(result);
-});
-
-app.get('/balance/:email', async (req, res) => {
-    const balance = await getBalanceByEmail(req.params.email);
-    res.json({ balance });
-});
-
-app.post('/create-account', async (req, res) => {
-    const { name, email, password } = req.body;
-    const result = await createAccount(name, email, password);
-    res.json(result);
-});
-
-app.post('/login', async (req, res) => {
-    const { email, password } = req.body;
-    const result = await login(email, password);
-    if (result.status === 'success') {
-        res.json(result);
-    } else {
-        res.status(401).json(result);
-    }
 });
 
 app.listen(port, () => {
