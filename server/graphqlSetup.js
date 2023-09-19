@@ -1,22 +1,11 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
-const { graphqlHTTP } = require('express-graphql');
 const { buildSchema } = require('graphql');
 const {
-    connect,
     getTransactions,
     createTransaction,
     getBalanceByEmail,
     updateBalance,
-    createAccount,
+    createAccount
 } = require('./dataAccessLayer');
-
-const app = express();
-const port = 3001;
-
-app.use(cors());
-app.use(bodyParser.json());
 
 const schema = buildSchema(`
   type Query {
@@ -26,19 +15,12 @@ const schema = buildSchema(`
 
   type Mutation {
     addTransaction(transaction: TransactionInput!): Transaction!
-     createAccount(name: String!, email: String!, password: String!): AccountResponse!
-  login(email: String!, password: String!): LoginResponse!
+    createAccount(name: String!, email: String!, password: String!): AccountResponse!
   }
 
   type AccountResponse {
     status: String!
     message: String!
-  }
-  
-  type LoginResponse {
-    status: String!
-    email: String
-    message: String
   }
 
   type Transaction {
@@ -71,12 +53,6 @@ const root = {
         await updateBalance(transaction.accountId, amount, transaction.type);
         return transaction;
     },
-    addWithdrawal: async ({ withdrawal }) => {
-        await createTransaction(withdrawal);
-        const amount = parseFloat(withdrawal.amount);
-        await updateBalance(withdrawal.accountId, -amount, 'Withdraw');
-        return withdrawal;
-    },
     createAccount: async ({ name, email, password }) => {
         const result = await createAccount(name, email, password);
         if (result) {
@@ -84,26 +60,7 @@ const root = {
         } else {
             return { status: "failure", message: "Couldn't create account" };
         }
-    },
+    }
 };
 
-app.use('/graphql', graphqlHTTP({
-    schema: schema,
-    rootValue: root,
-    graphiql: true,
-}));
-
-app.use((req, res, next) => {
-    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
-    next();
-});
-
-connect().then(() => {
-    console.log("Connected to MongoDB");
-}).catch((err) => {
-    console.error("Failed to connect to MongoDB", err);
-});
-
-app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
-});
+module.exports = { schema, root };

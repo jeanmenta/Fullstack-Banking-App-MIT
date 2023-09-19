@@ -33,6 +33,11 @@ module.exports = {
             hashedPassword = await bcrypt.hash(password, 10);
         }
         const collection = client.db("BankingDB").collection("Users");
+
+        const existingUser = await collection.findOne({ email });
+        if (existingUser) {
+            return null;
+        }
         return await collection.insertOne({ name, email, password: hashedPassword, balance: 0 });
     }
 };

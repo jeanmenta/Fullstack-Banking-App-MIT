@@ -61,6 +61,7 @@ function CreateAccount() {
             const { data } = await createAccountMutation({
                 variables: { name, email, password },
             });
+            console.log(data)
 
             if (data.createAccount.status === "success") {
                 setUser(user);
@@ -79,21 +80,28 @@ function CreateAccount() {
             const result = await signInWithPopup(auth, provider);
             const user = result.user;
 
+            const googleName = user.displayName;
+            const googleEmail = user.email;
+
             const { data } = await createAccountMutation({
-                variables: { name, email, password },
+                variables: { name: googleName, email: googleEmail, password: 'GoogleSignIn' },
             });
 
+            console.log(data.createAccount.status);
             if (data.createAccount.status === "success") {
                 setUser(user);
                 navigate("/home");
             } else {
                 setEmailError("Account creation failed. Please try again.");
+                setUser(user);
             }
         } catch (error) {
+            console.log('In catch');
             console.error("Account creation failed:", error);
             setEmailError("Account creation failed. Please try again.");
         }
     };
+
 
 
     return (
