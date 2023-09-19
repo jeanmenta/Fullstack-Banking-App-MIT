@@ -1,11 +1,22 @@
 import React, { useContext, useState } from 'react';
 import { Form, Button } from 'react-bootstrap';
+import { useMutation } from "@apollo/client";
+import gql from "graphql-tag";
 import { AccountContext } from '../AccountContext';
 import { Link, useNavigate } from 'react-router-dom';
 import CustomCard from './CustomCard';
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 import { signInWithPopup } from "firebase/auth";
 import { provider } from '../firebaseConfig';
+
+const CREATE_ACCOUNT = gql`
+  mutation CreateAccount($name: String!, $email: String!, $password: String!) {
+    createAccount(name: $name, email: $email, password: $password) {
+      status
+      message
+    }
+  }
+`;
 
 function CreateAccount() {
     const { setUser } = useContext(AccountContext);
@@ -17,6 +28,7 @@ function CreateAccount() {
     const navigate = useNavigate();
     const auth = getAuth();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const [createAccountMutation] = useMutation(CREATE_ACCOUNT);
 
     const [touched, setTouched] = useState({
         name: false,
@@ -46,17 +58,17 @@ function CreateAccount() {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
 
-            // Create account in MongoDB
-            await fetch('http://localhost:3001/create-account', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ name, email, password }),
+            const { data } = await createAccountMutation({
+                variables: { name, email, password },
             });
+            console.log(data)
 
-            setUser(user);
-            navigate('/home');
+            if (data.createAccount.status === "success") {
+                setUser(user);
+                navigate("/home");
+            } else {
+                setEmailError("Account creation failed. Please try again.");
+            }
         } catch (error) {
             console.error("Account creation failed:", error);
             setEmailError("Account creation failed. Please try again.");
@@ -68,23 +80,28 @@ function CreateAccount() {
             const result = await signInWithPopup(auth, provider);
             const user = result.user;
 
-            const name = user.displayName;
-            const email = user.email;
+            const googleName = user.displayName;
+            const googleEmail = user.email;
 
-            await fetch('http://localhost:3001/create-account', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ name, email }),
+            const { data } = await createAccountMutation({
+                variables: { name: googleName, email: googleEmail, password: 'GoogleSignIn' },
             });
 
-            setUser(user);
-            navigate('/home');
+            console.log(data.createAccount.status);
+            if (data.createAccount.status === "success") {
+                setUser(user);
+                navigate("/home");
+            } else {
+                setEmailError("Account creation failed. Please try again.");
+                setUser(user);
+            }
         } catch (error) {
-            console.error("Google Sign-In Error", error);
+            console.log('In catch');
+            console.error("Account creation failed:", error);
+            setEmailError("Account creation failed. Please try again.");
         }
     };
+
 
 
     return (

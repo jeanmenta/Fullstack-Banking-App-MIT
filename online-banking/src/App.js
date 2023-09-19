@@ -53,6 +53,7 @@ function App() {
 
   const links = user ? userLinks : guestLinks;
 
+  console.log("user ", user)
 
   if (isLoading) {
     return null;
