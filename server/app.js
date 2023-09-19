@@ -1,6 +1,8 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const { graphqlHTTP } = require('express-graphql');
+const { buildSchema } = require('graphql');
 const {
     connect,
     getTransactions,
@@ -15,10 +17,63 @@ const {
 const app = express();
 const port = 3001;
 
+const schema = buildSchema(`
+  type Query {
+    balance(email: String!): Float
+    transactions(email: String!): [Transaction]
+  }
+
+  type Mutation {
+    addTransaction(transaction: TransactionInput!): Transaction
+  }
+
+  type Transaction {
+    id: String
+    type: String
+    amount: Float
+    effectiveDate: String
+  }
+
+  input TransactionInput {
+    id: String!
+    type: String!
+    amount: Float!
+    effectiveDate: String!
+    accountId: String!
+  }
+`);
+
+const root = {
+    balance: async ({ email }) => {
+        return await getBalanceByEmail(email);
+    },
+    transactions: async ({ email }) => {
+        const transactions = await getTransactions();
+        return transactions.filter(t => t.accountId === email);
+    },
+    addTransaction: async ({ transaction }) => {
+        await createTransaction(transaction);
+        const amount = parseFloat(transaction.amount);
+        await updateBalance(transaction.accountId, amount, transaction.type);
+        return transaction;
+    },
+    addWithdrawal: async ({ withdrawal }) => {
+        await createTransaction(withdrawal);
+        const amount = parseFloat(withdrawal.amount);
+        await updateBalance(withdrawal.accountId, -amount, 'Withdraw');  // Note the negative sign
+        return withdrawal;
+    }
+};
+
 app.use(cors());
 app.use(bodyParser.json());
 
-// Initialize MongoDB connection
+app.use('/graphql', graphqlHTTP({
+    schema: schema,
+    rootValue: root,
+    graphiql: true,
+}));
+
 connect().then(() => {
     console.log("Connected to MongoDB");
 }).catch((err) => {
@@ -68,20 +123,6 @@ app.post('/login', async (req, res) => {
     }
 });
 
-// Start the server
 app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}/`);
+    console.log(`Server running on port ${port}`);
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
