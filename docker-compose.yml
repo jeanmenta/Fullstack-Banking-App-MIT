@@ -1,0 +1,27 @@
+version: "3"
+services:
+  banking-app-server-service:
+    build: ./server
+    container_name: banking-app-server
+    restart: unless-stopped
+    environment:
+      MONGO_URI: "${MONGO_URI}"
+    networks:
+      - your-app-network
+    ports:
+      - "3001:3001"
+
+  banking-app-client-service:
+    build: ./online-banking
+    container_name: banking-app-client
+    restart: unless-stopped
+    environment:
+      PORT: 3000
+    networks:
+      - your-app-network
+    ports:
+      - "3000:3000"
+
+networks:
+  your-app-network:
+    driver: bridge
