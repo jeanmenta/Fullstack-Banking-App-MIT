@@ -1,6 +1,7 @@
 version: "3"
 services:
   banking-app-server-service:
+    platform: linux/amd64
     build: ./server
     container_name: banking-app-server
     restart: unless-stopped
@@ -12,6 +13,7 @@ services:
       - "3001:3001"
 
   banking-app-client-service:
+    platform: linux/amd64
     build: ./online-banking
     container_name: banking-app-client
     restart: unless-stopped

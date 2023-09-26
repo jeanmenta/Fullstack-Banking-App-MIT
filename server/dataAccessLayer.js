@@ -1,5 +1,7 @@
+require('dotenv').config();
+
 const { MongoClient } = require('mongodb');
-const uri = "mongodb+srv://jeanlmenta:Gugqeb-6cogme-vixmej@bankingdb.vqj39qv.mongodb.net/?retryWrites=true&w=majority";
+const uri = process.env.MONGO_URI;
 
 const bcrypt = require('bcrypt');
 

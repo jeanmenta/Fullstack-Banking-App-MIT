@@ -2,13 +2,13 @@ import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyByxkRnsNXBlhqrFeCz4abu48XCbFBCu_I",
-    authDomain: "banking-app-9ce72.firebaseapp.com",
-    projectId: "banking-app-9ce72",
-    storageBucket: "banking-app-9ce72.appspot.com",
-    messagingSenderId: "37386041409",
-    appId: "1:37386041409:web:2d61838344c1d32b802ec0",
-    measurementId: "G-2LB3PZMG1Y"
+    apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+    authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.REACT_APP_FIREBASE_APP_ID,
+    measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID
 };
 
 initializeApp(firebaseConfig);
@@ -18,5 +18,5 @@ const provider = new GoogleAuthProvider();
 // Initialize Firebase Auth
 const auth = getAuth();
 
-export { auth, provider }; // Export them for use in other files
+export { auth, provider };
 export default firebaseConfig;

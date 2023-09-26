@@ -61,7 +61,6 @@ function CreateAccount() {
             const { data } = await createAccountMutation({
                 variables: { name, email, password },
             });
-            console.log(data)
 
             if (data.createAccount.status === "success") {
                 setUser(user);
@@ -87,7 +86,6 @@ function CreateAccount() {
                 variables: { name: googleName, email: googleEmail, password: 'GoogleSignIn' },
             });
 
-            console.log(data.createAccount.status);
             if (data.createAccount.status === "success") {
                 setUser(user);
                 navigate("/home");

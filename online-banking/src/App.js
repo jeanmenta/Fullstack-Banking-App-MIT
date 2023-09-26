@@ -16,7 +16,7 @@ import './styles/App.css';
 import { ApolloClient, InMemoryCache, ApolloProvider } from '@apollo/client';
 
 const client = new ApolloClient({
-  uri: 'http://localhost:3001/graphql',
+  uri: 'http://64.226.114.14:3001/graphql',
   cache: new InMemoryCache()
 });
 
@@ -52,8 +52,6 @@ function App() {
   }, []);
 
   const links = user ? userLinks : guestLinks;
-
-  console.log("user ", user)
 
   if (isLoading) {
     return null;
