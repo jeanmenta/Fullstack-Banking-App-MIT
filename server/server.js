@@ -22,8 +22,6 @@ app.use((req, res, next) => {
     next();
 });
 
-console.log("MongoDB URI:", process.env.MONGO_URI);  // Add this line
-
 connect().then(() => {
     console.log("Connected to MongoDB");
 }).catch((err) => {
