@@ -12,18 +12,6 @@ services:
     ports:
       - "3001:3001"
 
-  banking-app-client-service:
-    platform: linux/amd64
-    build: ./online-banking
-    container_name: banking-app-client
-    restart: unless-stopped
-    environment:
-      PORT: 3000
-    networks:
-      - your-app-network
-    ports:
-      - "3000:3000"
-
 networks:
   your-app-network:
     driver: bridge
