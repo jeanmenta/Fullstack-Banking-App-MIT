@@ -6,7 +6,7 @@ services:
     container_name: banking-app-server
     restart: unless-stopped
     environment:
-      MONGO_URI: "${MONGO_URI}"
+      MONGO_URI: "mongodb+srv://jeanlmenta:Gugqeb-6cogme-vixmej@bankingdb.vqj39qv.mongodb.net/?retryWrites=true&w=majority"
     networks:
       - your-app-network
     ports:
